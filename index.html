@@ -143,6 +143,23 @@ input[type=range]{width:100%;accent-color:var(--green)}
 @keyframes sp{to{transform:rotate(360deg)}}
 .busy{position:fixed;top:0;left:0;height:3px;background:var(--grad);width:0;z-index:90;transition:width .6s;border-radius:0 3px 3px 0}
 .busy.on{width:70%}
+.pf .xp{height:9px;border-radius:5px;background:rgba(255,255,255,.22);margin-top:10px;overflow:hidden}
+.pf .xp i{display:block;height:100%;background:linear-gradient(90deg,#7CF5C8,#C9FFE9);border-radius:5px;box-shadow:0 0 12px rgba(124,245,200,.7)}
+.lvl{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);font-size:12px;font-weight:700}
+.bdg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px}
+.bd{text-align:center;font-size:11px;font-weight:600;color:var(--mut);line-height:1.25;cursor:pointer}
+.bd i{display:flex;width:52px;height:52px;margin:0 auto 6px;border-radius:17px;align-items:center;justify-content:center;font-size:25px;font-style:normal;background:var(--card);box-shadow:var(--shadow);position:relative}
+.bd.on i{background:linear-gradient(135deg,var(--amber-bg),var(--violet-bg))}
+.bd.off i{filter:grayscale(1);opacity:.35}
+.bd.off{color:var(--fnt)}
+.goal{position:relative;overflow:hidden}
+.goal .gb{height:12px;border-radius:6px;background:var(--gray-bg);overflow:hidden;margin:10px 0 6px}
+.goal .gb i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#1FB98A,#4AD6A3,#7CF5C8)}
+.sk2{padding:7px 0}
+.sk2 .bar i{background:var(--grad)}
+.ty{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.45}
+.ty:last-child{border:none}
+.star{font-size:30px;letter-spacing:4px;cursor:pointer;user-select:none;text-align:center;padding:6px 0}
 </style></head>
 <body>
 <div class="busy" id="busy"></div>
@@ -152,6 +169,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <section id="v-tasks" class="hide"></section>
   <section id="v-stats" class="hide"></section>
   <section id="v-team" class="hide"></section>
+  <section id="v-profile" class="hide"></section>
 </div>
 <nav class="nav"><div class="in" id="nav"></div></nav>
 <div class="ov" id="ov" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
@@ -178,11 +196,11 @@ function call(act,p,ok,fail){
   if(GAS){google.script.run.withSuccessHandler(ok).withFailureHandler(fail).appAct(TOKEN,act,p||{});return;}
   fetch(API,{method:'POST',body:JSON.stringify({app:1,t:TOKEN,a:act,p:p||{}})}).then(function(r){return r.json();}).then(ok).catch(fail);
 }
-var D=null,view='home',tf=null,boardMode=false,q='',statP='m',statRow=0,openId=null,statMode='kpi',resP='m',rq='';
+var profRow=0,D=null,view='home',tf=null,boardMode=false,q='',statP='m',statRow=0,openId=null,statMode='kpi',resP='m',rq='';
 var SC={'Новая':['--violet-bg','--violet'],'В работе':['--acc-bg','--acc'],'Ждёт данных':['--coral-bg','--coral'],'На проверке':['--amber-bg','--amber'],'Приостановлено':['--gray-bg','--mut'],'Выполнено':['--green-bg','--green'],'Отменено':['--gray-bg','--fnt']};
 var PC={'Высокий':'#E24B4A','Средний':'#EF9F27','Низкий':'#B4B2A9'};
 var AVC=[['#E6F1FB','#0C447C'],['#E1F5EE','#085041'],['#EEEDFE','#3C3489'],['#FAEEDA','#633806'],['#FBEAF0','#72243E'],['#FAECE7','#712B13']];
-var IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',plus:'<path d="M12 5v14M5 12h14"/>',stats:'<path d="M5 20V10M12 20V4M19 20v-7"/>',team:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2c2.9.2 5 2.6 5 5.8"/>',search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',board:'<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'};
+var IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',plus:'<path d="M12 5v14M5 12h14"/>',profile:'<circle cx="12" cy="9" r="5"/><path d="M8.5 13.5L7 21l5-2.5 5 2.5-1.5-7.5"/>',stats:'<path d="M5 20V10M12 20V4M19 20v-7"/>',team:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2c2.9.2 5 2.6 5 5.8"/>',search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',board:'<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'};
 function ic(n,s){return '<svg width="'+(s||22)+'" height="'+(s||22)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+IC[n]+'</svg>';}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function $(id){return document.getElementById(id);}
@@ -215,15 +233,15 @@ function start(){$('load').classList.add('hide');tf=isLead()?'all':'mine';render
 
 function nav(){
   var items=[['home','Главная'],['tasks','Задачи'],['plus',''],['stats','Статистика']];
-  if(isLead())items.push(['team','Команда']);
+  if(isLead())items.push(['team','Команда']);else items.push(['profile','Профиль']);
   $('nav').innerHTML=items.map(function(x){if(x[0]==='plus')return '<button class="fab" onclick="openNew()" aria-label="Новая задача">'+ic('plus',24)+'</button>';
     return '<button class="'+(view===x[0]?'on':'')+'" onclick="go(\''+x[0]+'\')">'+ic(x[0])+x[1]+'</button>';}).join('');
 }
 function go(v){if(v!==view)haptic('sel');view=v;window.scrollTo(0,0);render();}
 function render(){
-  ['home','tasks','stats','team'].forEach(function(v){$('v-'+v).classList.toggle('hide',v!==view);});
+  ['home','tasks','stats','team','profile'].forEach(function(v){$('v-'+v).classList.toggle('hide',v!==view);});
   nav();
-  if(view==='home')renderHome();if(view==='tasks')renderTasks();if(view==='stats')renderStats();if(view==='team')renderTeam();
+  if(view==='home')renderHome();if(view==='tasks')renderTasks();if(view==='stats')renderStats();if(view==='team')renderTeam();if(view==='profile')renderProfile();
   if(openId&&$('ov').classList.contains('show')&&$('sheet').getAttribute('data-k')==='task')renderTask(openId);
   syncBack();
 }
@@ -251,6 +269,8 @@ function renderHome(){
   var tiles=isLead()?[['В работе',open.filter(function(t){return t.status==='В работе';}).length,'--acc-bg','--acc','work'],['На проверке',open.filter(function(t){return t.status==='На проверке';}).length,'--amber-bg','--amber','review'],['Просрочено',late.length,late.length?'--red-bg':'--card',late.length?'--red':'--mut','late']]
    :[['Мои задачи',my.length,'--acc-bg','--acc','mine'],['На проверке',my.filter(function(t){return t.status==='На проверке';}).length,'--amber-bg','--amber','review'],['Просрочено',late.length,late.length?'--red-bg':'--card',late.length?'--red':'--mut','late']];
   html+='<div class="qs">'+tiles.map(function(x){return '<div onclick="tf=\''+x[4]+'\';go(\'tasks\')"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+'</div></div>';
+  html+=goalCard();
+  if(!isLead()&&D.game&&D.game.profiles[D.me.row]){var g=D.game.profiles[D.me.row];html+='<div class="card" style="display:flex;align-items:center;gap:12px;margin-top:10px;cursor:pointer" onclick="go(\'profile\')"><div style="font-size:30px">🏅</div><div style="flex:1"><div style="font-weight:700">Уровень '+g.level+' · '+esc(g.levelName)+'</div><div class="sub">🔥 '+g.streak+' дн. без просрочек · '+g.badges.filter(function(b){return b.got;}).length+' наград</div><div class="bar"><i style="width:'+xpPct(g)+'%;background:var(--grad)"></i></div></div></div>';}
   if(isLead()){
     var rv=open.filter(function(t){return t.status==='На проверке';});
     if(rv.length)html+='<div class="sec"><b>Ждут вашей проверки</b><span onclick="tf=\'review\';go(\'tasks\')">Все</span></div>'+rv.slice(0,4).map(function(t){return row(t,true);}).join('');
@@ -335,8 +355,8 @@ function renderTask(id){
   if(can){
     if(t.status==='Новая'||t.status==='Приостановлено'||t.status==='Ждёт данных')A.push(['▶ В работу','acc',"setS('"+id+"','В работе')"]);
     if(t.status==='В работе'){A.push(['📤 На проверку','pri',"submitT('"+id+"')"]);A.push(['⏳ Жду данные','sec2',"waitT('"+id+"')"]);}
-    if(t.status==='На проверке'&&lead){A.push(['✅ Принять','grn',"setS('"+id+"','Выполнено')"]);A.push(['↩ На доработку','sec2',"returnT('"+id+"')"]);}
-    if(lead&&t.status!=='На проверке')A.push(['✅ Выполнено','grn',"setS('"+id+"','Выполнено')"]);
+    if(t.status==='На проверке'&&lead){A.push(['✅ Принять','grn',"acceptT('"+id+"')"]);A.push(['↩ На доработку','sec2',"returnT('"+id+"')"]);}
+    if(lead&&t.status!=='На проверке')A.push(['✅ Выполнено','grn',t.exec?"acceptT('"+id+"')":"setS('"+id+"','Выполнено')"]);
   }
   if(!op&&lead)A.push(['↩ Вернуть в работу','sec2',"setS('"+id+"','В работе')"]);
   if(A.length)h+='<div class="acts">'+A.map(function(a){return '<button class="btn '+a[1]+'" onclick="'+a[2]+'">'+a[0]+'</button>';}).join('')+'</div>';
@@ -348,6 +368,8 @@ function renderTask(id){
     h+='<div class="sec"><b>Чек-лист приёмки</b><span style="color:var(--mut)">'+t.checkD+' из '+t.checkN+'</span></div><div class="card" style="padding:0">'+t.check.map(function(c,i){return '<div class="chk'+(c.d?' d':'')+'" '+(can?'onclick="api(\'check\',{id:\''+esc(id)+'\',i:'+i+'},null,true)"':'')+'><span class="box">'+(c.d?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':'')+'</span><span>'+esc(c.t)+'</span></div>';}).join('')+'</div>';
   }
   h+='<div class="sec"><b>Комментарии</b></div><div class="card" style="padding:0">'+(t.comments.length?t.comments.map(function(c){return '<div class="cm"><div class="w">'+esc(c.w)+'</div>'+esc(c.t)+'</div>';}).join(''):'<div class="cm" style="color:var(--fnt)">Пока нет</div>')+'</div>';
+  if(t.quality)h+='<div class="card" style="margin-top:10px;text-align:center"><div class="sub">Оценка качества</div><div style="font-size:24px;letter-spacing:3px;color:#F5B83D">'+'★'.repeat(t.quality)+'<span style="color:var(--line)">'+'★'.repeat(5-t.quality)+'</span></div></div>';
+  if(t.exec&&t.exec!==D.me.name)h+='<button class="btn sec2 wide" style="margin-top:10px" onclick="thanksTask(\''+esc(id)+'\')">💛 Спасибо, '+esc(short(t.exec))+'</button>';
   if(op)h+='<div style="display:flex;gap:8px;margin-top:8px"><input class="inp" id="cmt" placeholder="'+(lead||!my?'Комментарий':'Комментарий или вопрос руководителю')+'" onkeydown="if(event.key===\'Enter\')sendCm(\''+esc(id)+'\')"><button class="btn pri" onclick="sendCm(\''+esc(id)+'\')">↑</button></div>';
   if(op&&my&&!lead)h+='<div class="mini" style="margin-top:12px"><button class="btn sm sec2" onclick="askExt(\''+esc(id)+'\')">📅 Попросить перенос срока</button><button class="btn sm sec2" onclick="askLink(\''+esc(id)+'\')">🔗 Добавить ссылку</button></div>';
   if(op&&lead)h+='<div class="mini" style="margin-top:12px"><button class="btn sm sec2" onclick="askLink(\''+esc(id)+'\')">🔗 Добавить ссылку</button><button class="btn sm sec2" style="color:var(--red)" onclick="confirmX(\''+esc(id)+'\')">Отменить задачу</button></div>';
@@ -479,10 +501,51 @@ function renderResList(){var r=D.results,q=rq.toLowerCase(),M=['Январь','�
   $('rl').innerHTML=h;}
 
 function renderTeam(){
-  var h='<h1>Команда</h1><div class="sub">Лимит одновременно в работе: '+D.wip+'</div><div style="margin-top:14px"></div>';
-  h+=D.team.map(function(m){var pct=Math.min(100,Math.round(m.work/D.wip*100));return '<div class="person" onclick="tf=\'p'+m.row+'\';go(\'tasks\')">'+av(m.name,40)+'<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-weight:600">'+esc(m.name)+'</b><span class="sub">'+(m.online?'🟢':'⚪')+'</span></div><div class="sub">'+esc(m.pos)+'</div><div class="bar"><i style="width:'+pct+'%;background:'+(m.work>=D.wip?'#E24B4A':'#378ADD')+'"></i></div><div class="sub" style="margin-top:5px">в работе '+m.work+'/'+D.wip+' · всего '+m.active+(m.review?' · на проверке '+m.review:'')+(m.overdue?' · <b style="color:var(--red)">просрочено '+m.overdue+'</b>':'')+'</div></div></div>';}).join('');
+  var G=D.game||{team:[]},byRow={};G.team.forEach(function(x){byRow[x.row]=x;});
+  var h='<h1>Команда</h1><div class="sub">Лимит одновременно в работе: '+D.wip+'</div>';
+  h+=goalCard(true);
+  var hero=G.team.slice().sort(function(a,b){return b.weekXp-a.weekXp;})[0];
+  if(hero&&hero.weekXp)h+='<div class="card" style="margin-top:10px;display:flex;gap:12px;align-items:center"><div style="font-size:30px">🦸</div><div><div class="sub">Герой недели</div><div style="font-weight:700">'+esc(hero.name)+' · +'+hero.weekXp+' опыта</div></div></div>';
+  h+='<div class="acts"><button class="btn acc" onclick="pickWotw()">🏆 Работа недели</button><button class="btn sec2" onclick="thanksPick()">💛 Поблагодарить</button></div>';
+  h+='<div class="sec"><b>Сотрудники</b></div>';
+  h+=D.team.filter(function(m){return !m.lead;}).map(function(m){var g=byRow[m.row]||{};var pct=Math.min(100,Math.round(m.work/D.wip*100));
+    return '<div class="person" onclick="openProfile('+m.row+')">'+av(m.name,42)+'<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-weight:700">'+esc(m.name)+'</b><span class="pill" style="background:var(--violet-bg);color:var(--violet)">ур. '+(g.level||1)+'</span></div>'+
+      '<div class="sub">'+esc(g.levelName||m.pos)+' · 🔥 '+(g.streak||0)+' · 🏅 '+(g.badgesN||0)+' · ⭐ '+(g.quality==null?'—':String(g.quality).replace('.',','))+'</div>'+
+      '<div class="bar"><i style="width:'+pct+'%;background:'+(m.work>=D.wip?'#E24B4A':'#378ADD')+'"></i></div><div class="sub" style="margin-top:5px">в работе '+m.work+'/'+D.wip+' · всего '+m.active+(m.overdue?' · <b style="color:var(--red)">просрочено '+m.overdue+'</b>':'')+'</div></div></div>';}).join('');
   h+='<div class="sec"><b>Объявление команде</b></div><textarea class="inp" id="ann" placeholder="Например: завтра планёрка в 10:00"></textarea><button class="btn pri wide" style="margin-top:8px" onclick="var v=$(\'ann\').value.trim();if(v)api(\'announce\',{text:v});">Отправить всем в Telegram</button>';
   $('v-team').innerHTML=h;
+}
+function goalCard(edit){var g=D.game&&D.game.goal;if(!g)return '';
+  return '<div class="card goal" style="margin-top:10px"'+(edit?' onclick="editGoal()"':'')+'><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px">🎯 Цель команды · '+esc(g.label.split(' ')[0])+'</b><span class="sub">'+(edit?'изменить':g.pct+'%')+'</span></div>'+
+    '<div class="gb"><i style="width:'+g.pct+'%"></i></div><div class="sub"><b style="color:var(--ink)">'+g.done+' / '+g.tasks+'</b> задач · в срок '+(g.ot===null?'—':g.ot+'%')+' (цель '+g.ontime+'%)'+(g.reward?' · 🎁 '+esc(g.reward):'')+(g.reached?' · <b style="color:var(--green)">выполнено!</b>':'')+'</div></div>';}
+function editGoal(){var g=D.game.goal;ask('Цель на месяц: задач, % в срок, награда','Например: 45 90 командный обед',function(v){var m=v.match(/(\d+)\D+(\d+)\s*%?\s*(.*)/)||v.match(/(\d+)()(.*)/);if(!m){toast('Например: 45 90 обед');return;}api('goal',{tasks:Number(m[1]),ontime:Number(m[2])||85,reward:(m[3]||'').trim()});});}
+function pickWotw(){var w=(D.game&&D.game.week)||[];if(!w.length){toast('За неделю нет выполненных задач');return;}choose('Работа недели','Автор получит награду, команда — объявление',w.map(function(t){return [short(t.exec||'—')+' · '+t.obj+' — '+t.title,t.id];}),function(v){api('wotw',{id:v});});}
+function thanksPick(){choose('Кого поблагодарить?','',D.team.filter(function(m){return m.name!==D.me.name;}).map(function(m){return [m.name,String(m.row)];}),function(r){thanksText({row:Number(r)});});}
+function thanksTask(id){thanksText({id:id});}
+function thanksText(p){var Q=(D.game&&D.game.quick)||['Спасибо!'];choose('Благодарность','',Q.map(function(q){return [q,q];}).concat([['✏️ Написать своё','__own']]),function(v){
+  if(v==='__own'){ask('Ваша благодарность','За что спасибо?',function(t){p.text=t;api('thanks',p);});return;}p.text=v;api('thanks',p);});}
+function acceptT(id){openSheet('<div style="font-size:18px;font-weight:700;margin:4px 2px 4px">Принять задачу</div><div class="sub" style="margin:0 2px 12px">Оцените качество — это влияет на опыт и награды сотрудника</div><div class="card"><div class="star" id="stars">'+[1,2,3,4,5].map(function(n){return '<span data-n="'+n+'" style="color:var(--line)">★</span>';}).join('')+'</div></div><div class="acts"><button class="btn sec2" id="st0">Без оценки</button><button class="btn grn" id="st1">Принять</button></div>','stars');
+  var cur=0;function paint(){Array.prototype.forEach.call($('stars').children,function(e){e.style.color=Number(e.getAttribute('data-n'))<=cur?'#F5B83D':'var(--line)';});}
+  Array.prototype.forEach.call($('stars').children,function(e){e.onclick=function(){cur=Number(e.getAttribute('data-n'));paint();haptic('sel');};});
+  $('st0').onclick=function(){back();api('accept',{id:id,stars:0});};$('st1').onclick=function(){if(!cur){toast('Выберите звёзды или «Без оценки»');return;}back();api('accept',{id:id,stars:cur});};}
+function xpPct(g){return g.next?Math.round((g.xp-g.cur)/(g.next-g.cur)*100):100;}
+function openProfile(row){profRow=row;view='profile';window.scrollTo(0,0);render();}
+function renderProfile(){
+  var row=isLead()?profRow:D.me.row,g=D.game&&D.game.profiles[row];
+  if(!g){$('v-profile').innerHTML=emptyIll('Профиль появится после первой выполненной задачи');return;}
+  var got=g.badges.filter(function(b){return b.got;}).length;
+  var h=(isLead()?'<button class="btn sm sec2" style="margin-bottom:10px" onclick="go(\'team\')">← Команда</button>':'');
+  h+='<div class="top pf"><div class="tag"><i></i>Профиль</div><h1>'+esc(g.name)+'</h1><div class="sub">'+esc(g.pos||'')+'</div>'+
+    '<div style="margin-top:12px"><span class="lvl">🏅 Уровень '+g.level+' · '+esc(g.levelName)+'</span></div>'+
+    '<div class="sub" style="margin-top:10px">'+g.xp+(g.next?' / '+g.next+' опыта до уровня '+(g.level+1):' опыта · максимальный уровень')+'</div><div class="xp"><i style="width:'+xpPct(g)+'%"></i></div>'+
+    '<div class="qs"><div><b>🔥 '+g.streak+'</b><span>дней без просрочек</span></div><div><b>⭐ '+(g.quality==null?'—':String(g.quality).replace('.',','))+'</b><span>качество</span></div><div><b>💛 '+g.thanksN+'</b><span>благодарностей</span></div></div></div>';
+  h+=goalCard(false);
+  h+='<div class="sec"><b>Награды</b><span style="color:var(--mut)">'+got+' из '+g.badges.length+'</span></div><div class="bdg">'+g.badges.slice().sort(function(a,b){return b.got-a.got;}).map(function(b){return '<div class="bd '+(b.got?'on':'off')+'" onclick="toast(\''+esc(b.n).replace(/'/g,'')+': '+esc(b.d).replace(/'/g,'')+(b.got?' ✓':' · '+b.prog)+'\')"><i>'+b.e+'</i>'+esc(b.n)+'</div>';}).join('')+'</div>';
+  if(g.skills.length)h+='<div class="sec"><b>Навыки</b></div><div class="card">'+g.skills.slice(0,6).map(function(s){return '<div class="sk2"><div style="display:flex;justify-content:space-between;font-size:13.5px"><span>'+esc(s.type)+'</span><b>ур. '+s.level+'</b></div><div class="bar"><i style="width:'+s.pct+'%"></i></div><div class="sub" style="font-size:11.5px;margin-top:3px">'+s.n+' задач · '+s.xp+' опыта</div></div>';}).join('')+'</div>';
+  h+='<div class="sec"><b>Благодарности</b>'+(g.name!==D.me.name?'<span onclick="thanksText({row:'+g.row+'})">💛 Поблагодарить</span>':'<span onclick="thanksPick()">💛 Коллеге</span>')+'</div><div class="card" style="padding:4px 14px">'+(g.thanks.length?g.thanks.map(function(x){return '<div class="ty"><div style="font-size:20px">💛</div><div><b>'+esc(short(x.from))+'</b> <span class="sub">'+esc(x.when)+'</span><div>'+esc(x.text)+'</div></div></div>';}).join(''):'<div class="ty" style="color:var(--fnt)">Пока нет — всё впереди</div>')+'</div>';
+  h+='<div class="sec"><b>Портфолио</b><span style="color:var(--mut)">'+g.doneN+'</span></div>'+(g.portfolio.length?g.portfolio.slice(0,30).map(function(t){return '<div class="row" style="--st:var(--green);cursor:default"><div class="main"><div class="o">#'+esc(t.id)+' · '+esc(t.obj)+'</div><div class="ti">'+esc(t.title)+'</div><div class="meta"><span class="pill" style="background:var(--green-bg);color:var(--green)">✓ '+esc(t.done||'выполнено')+'</span>'+(t.stars?'<span class="pill" style="background:var(--amber-bg);color:var(--amber)">'+'★'.repeat(t.stars)+'</span>':'')+(t.link?'<a class="pill" style="background:var(--acc-bg);color:var(--acc);text-decoration:none" href="'+esc(t.link)+'" target="_blank">🔗 файл</a>':'')+'</div></div></div>';}).join(''):emptyIll('Здесь появятся выполненные задачи'));
+  if(isLead())h+='<button class="btn sec2 wide" style="margin-top:12px" onclick="tf=\'p'+g.row+'\';go(\'tasks\')">Задачи сотрудника</button>';
+  $('v-profile').innerHTML=h;
 }
 </script>
 <script>
