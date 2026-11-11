@@ -225,6 +225,7 @@ function pill(st){var c=SC[st]||SC['Новая'];return '<span class="pill" styl
 function toast(t){var e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('show');},2300);}
 function busy(on){$('busy').classList.toggle('on',on);if(!on){$('busy').style.width='100%';setTimeout(function(){$('busy').style.width='';},250);}}
 function isLead(){return D&&D.me.lead;}
+function canAcc(t){return isLead()&&!(D.me.deputy&&mine(t));}
 function exList(t){return String((t&&t.exec)||'').split(/\s*[,;]\s*/).map(function(x){return x.trim();}).filter(Boolean);}
 function mine(t){return exList(t).indexOf(D.me.name)>=0;}
 function avs(t,s){var L=exList(t);if(!L.length)return av('',s);return '<span style="display:inline-flex;align-items:center">'+L.slice(0,3).map(function(n,i){return '<span style="margin-left:'+(i?'-7px':'0')+';display:inline-flex">'+av(n,s)+'</span>';}).join('')+(L.length>3?'<span class="sub" style="margin-left:4px">+'+(L.length-3)+'</span>':'')+'</span>';}
@@ -248,7 +249,7 @@ function boot(){
 function start(){$('load').classList.add('hide');tf=isLead()?'all':'mine';render();setInterval(function(){if(!document.hidden&&!$('ov').classList.contains('show'))api('boot',{},null,true);},90000);}
 
 function nav(){
-  var items=[['home','Главная'],['tasks','Задачи'],['plus',''],['stats','Статистика']];
+  var items=[['home','Главная'],['tasks','Задачи']].concat(isLead()?[['plus','']]:[]).concat([['stats','Статистика']]);
   if(isLead())items.push(['team','Команда']);else items.push(['profile','Профиль']);
   $('nav').innerHTML=items.map(function(x){if(x[0]==='plus')return '<button class="fab" onclick="openNew()" aria-label="Новая задача">'+ic('plus',24)+'</button>';
     return '<button class="'+(view===x[0]?'on':'')+'" onclick="go(\''+x[0]+'\')">'+ic(x[0])+x[1]+'</button>';}).join('');
@@ -356,6 +357,22 @@ function renderTaskList(){
   $('tl').innerHTML=G.map(function(g){var gl=L.filter(g[1]);if(!gl.length)return '';return '<div class="grp">'+g[0]+' · '+gl.length+'</div>'+gl.map(function(t){return row(t,showExec);}).join('');}).join('');
 }
 
+function openProto(id){api('protocol',{id:id},function(){if(D.protocol)renderProto(D.protocol);},true);}
+function renderProto(p){
+  var on=p.onTime===null?['—','var(--mut)']:p.onTime?['В срок','var(--green)']:['Просрочено на '+p.lateDays+' дн.','var(--red)'];
+  var kv=[['Поставлена',p.created+(p.init?' · '+short(p.init):'')],[p.execs.length>1?'Исполнители':'Исполнитель',p.execs.join(', ')||'—'],['Начата',p.start],['Срок',p.due],['Сдана на проверку',p.submitted||'—'],['Закрыта',p.done+(p.acceptedBy?' · '+short(p.acceptedBy):'')],
+    ['Длительность',(p.fact!==null?p.fact+' дн.':'—')+(p.plan?' · оценка '+p.plan:'')+(p.hours?' · '+String(p.hours).replace('.',',')+' ч':'')],['Возвраты',p.returns.length+(p.returns.length?' · '+p.returns.join(', '):'')],['Переносы срока',String(p.dueMoves)]];
+  if(p.check)kv.push(['Чек-лист',p.check]);
+  var h='<div style="display:flex;justify-content:space-between;align-items:center"><div class="eyebrow">Протокол задачи</div><button class="btn sm sec2" onclick="back()">Назад</button></div>'+
+    '<div style="font-size:22px;font-weight:700;letter-spacing:-.4px;margin:8px 0 2px">#'+esc(p.id)+' · '+esc(p.obj)+'</div><div class="sub" style="font-size:15px;color:var(--ink)">'+esc(p.title)+'</div>'+
+    '<div class="qs" style="margin-top:14px"><div><b style="color:'+on[1]+';font-size:17px">'+on[0]+'</b><span>результат</span></div><div><b style="font-size:20px">'+(p.fact!==null?p.fact:'—')+'</b><span>дней заняло</span></div><div><b style="font-size:20px;color:#F5B83D">'+(p.quality?'★'+p.quality:'—')+'</b><span>оценка</span></div></div>'+
+    '<div class="card" style="padding:4px 16px;margin-top:12px">'+kv.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px"><span class="sub" style="font-size:14px">'+x[0]+'</span><span style="text-align:right;font-weight:500">'+esc(x[1])+'</span></div>';}).join('')+'</div>';
+  if(p.link)h+='<a class="btn sec2 wide" style="margin-top:10px;text-decoration:none" href="'+esc(p.link)+'" target="_blank">🔗 Результат работы</a>';
+  if(p.events.length){h+='<div class="sec"><b>Хронология</b></div><div class="card" style="padding:14px 16px">'+p.events.map(function(e,i){var last=i===p.events.length-1;
+    return '<div style="display:flex;gap:12px"><div style="display:flex;flex-direction:column;align-items:center"><span style="width:11px;height:11px;border-radius:50%;margin-top:4px;background:'+(/Принял/.test(e.what)?'var(--green)':/Вернул|причина/.test(e.what)?'var(--red)':'var(--acc)')+';box-shadow:0 0 0 4px var(--soft)"></span>'+(last?'':'<span style="flex:1;width:2px;background:var(--line);margin:4px 0"></span>')+'</div>'+
+    '<div style="padding-bottom:'+(last?0:14)+'px;min-width:0"><div style="font-size:14.5px;font-weight:500">'+esc(e.what.trim())+'</div><div class="sub" style="font-size:12.5px">'+esc(e.at)+(e.who?' · '+esc(e.who):'')+'</div></div></div>';}).join('')+'</div>';}
+  h+='<button class="btn acc wide" style="margin-top:14px" onclick="api(\'protocolPdf\',{id:\''+esc(p.id)+'\'})">📄 PDF протокола в Telegram</button>';
+  openSheet(h,'proto');}
 function emptyIll(t){return '<div class="ill"><svg width="120" height="92" viewBox="0 0 120 92" fill="none"><rect x="14" y="10" width="78" height="62" rx="14" fill="var(--acc-bg)" transform="rotate(-8 53 41)"/><rect x="26" y="16" width="78" height="62" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><rect x="38" y="30" width="14" height="14" rx="4" fill="var(--green)"/><path d="M41.5 37l2.5 2.5 4.5-5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="58" y="33" width="34" height="7" rx="3.5" fill="var(--line)"/><rect x="38" y="52" width="14" height="14" rx="4" fill="none" stroke="var(--fnt)" stroke-width="2"/><rect x="58" y="55" width="26" height="7" rx="3.5" fill="var(--line)"/><circle cx="104" cy="14" r="6" fill="var(--violet-bg)"/><circle cx="12" cy="76" r="4" fill="var(--amber-bg)"/></svg><div>'+esc(t)+'</div></div>';}
 function openSheet(html,k){$('sheet').innerHTML='<div class="grab"></div>'+html;$('sheet').setAttribute('data-k',k||'');if(!$('ov').classList.contains('show'))haptic('light');$('ov').classList.add('show');$('sheet').scrollTop=0;syncBack();}
 function closeSheet(){$('ov').classList.remove('show');openId=null;syncBack();}
@@ -381,10 +398,11 @@ function renderTask(id){
   if(can){
     if(t.status==='Новая'||t.status==='Приостановлено'||t.status==='Ждёт данных')A.push(['▶ В работу','acc',"setS('"+id+"','В работе')"]);
     if(t.status==='В работе'){A.push(['📤 На проверку','pri',"submitT('"+id+"')"]);A.push(['⏳ Жду данные','sec2',"waitT('"+id+"')"]);}
-    if(t.status==='На проверке'&&lead){A.push(['✅ Принять','grn',"acceptT('"+id+"')"]);A.push(['↩ На доработку','sec2',"returnT('"+id+"')"]);}
-    if(lead&&t.status!=='На проверке')A.push(['✅ Выполнено','grn',t.exec?"acceptT('"+id+"')":"setS('"+id+"','Выполнено')"]);
+    if(t.status==='На проверке'&&canAcc(t)){A.push(['✅ Принять','grn',"acceptT('"+id+"')"]);A.push(['↩ На доработку','sec2',"returnT('"+id+"')"]);}
+    if(canAcc(t)&&t.status!=='На проверке')A.push(['✅ Выполнено','grn',t.exec?"acceptT('"+id+"')":"setS('"+id+"','Выполнено')"]);
   }
   if(!op&&lead)A.push(['↩ Вернуть в работу','sec2',"setS('"+id+"','В работе')"]);
+  if(t.status==='Выполнено')A.push(['🧾 Протокол','sec2',"openProto('"+id+"')"]);
   if(A.length)h+='<div class="acts">'+A.map(function(a){return '<button class="btn '+a[1]+'" onclick="'+a[2]+'">'+a[0]+'</button>';}).join('')+'</div>';
   if(can&&t.exec){
     h+='<div class="sec"><b>Прогресс</b><span style="color:var(--ink)" id="pv">'+(t.progress||0)+'%</span></div><div class="card" style="padding:10px 14px"><input type="range" min="0" max="100" step="5" value="'+(t.progress||0)+'" oninput="$(\'pv\').textContent=this.value+\'%\'" onchange="api(\'progress\',{id:\''+esc(id)+'\',v:Number(this.value)})"></div>';
@@ -473,6 +491,7 @@ function useTpl(i){var t=D.templates[i];NF.tpl=i;NF.title=NF.title||t.name;NF.de
 function createT(){
   if(!NF.obj.trim()){$('nErr').textContent='Укажите объект';return;}
   if(!NF.title.trim()){$('nErr').textContent='Напишите задачу';return;}
+  if(!NF.due&&!NF.plan){$('nErr').textContent='Укажите срок или оценку в днях — без срока задача теряется';return;}
   api('create',{obj:NF.obj.trim(),title:NF.title.trim(),desc:NF.desc.trim(),exec:isLead()?(NF.execs||[]):NF.exec,due:NF.due,prio:NF.prio,plan:NF.plan||'',tpl:NF.tpl},function(){closeSheet();tf=isLead()?'all':'mine';go('tasks');});
 }
 
